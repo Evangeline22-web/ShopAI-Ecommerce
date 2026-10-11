@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { FaHeartBroken } from "react-icons/fa";
@@ -22,7 +23,7 @@ function Wishlist() {
 
       setWishlistItems(res.data);
     } catch (error) {
-      console.error(error);
+      console.error("Failed to load wishlist:", error);
       toast.error("Failed to load wishlist");
     }
   };
@@ -38,18 +39,28 @@ function Wishlist() {
       });
 
       toast.success("Removed from wishlist");
-
       fetchWishlist();
     } catch (error) {
-      console.error(error);
+      console.error("Failed to remove wishlist item:", error);
       toast.error("Failed to remove item");
     }
+  };
+
+  const getImageUrl = (product) => {
+    if (!product?.image) {
+      return "/no-image.png";
+    }
+
+    if (product.image.startsWith("http")) {
+      return product.image;
+    }
+
+    return `http://localhost:5000${product.image.startsWith("/") ? "" : "/"}${product.image}`;
   };
 
   return (
     <div className="bg-gray-100 min-h-screen py-10">
       <div className="max-w-7xl mx-auto px-6">
-
         <h1 className="text-4xl font-bold mb-8">
           ❤️ My Wishlist
         </h1>
@@ -59,53 +70,61 @@ function Wishlist() {
             <h2 className="text-2xl font-semibold">
               Your wishlist is empty.
             </h2>
+            <p className="text-gray-500 mt-3">
+              Add your favorite products to see them here.
+            </p>
           </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {wishlistItems.map((item) => {
+              const product = item.product;
 
-            {wishlistItems.map((item) => (
-              <div
-                key={item._id}
-                className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition"
-              >
-                <img
-                  src={
-                    item.product.imageUrl ||
-                    "https://via.placeholder.com/300"
-                  }
-                  alt={item.product.name}
-                  className="w-full h-60 object-cover"
-                />
+              if (!product) {
+                return null;
+              }
 
-                <div className="p-5">
+              return (
+                <div
+                  key={item._id}
+                  className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition"
+                >
+                  <img
+                    src={getImageUrl(product)}
+                    alt={product.name || "Wishlist product"}
+                    className="w-full h-60 object-cover"
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = "/no-image.png";
+                    }}
+                  />
 
-                  <h2 className="text-xl font-bold">
-                    {item.product.name}
-                  </h2>
+                  <div className="p-5">
+                    <h2 className="text-xl font-bold">
+                      {product.name}
+                    </h2>
 
-                  <p className="text-blue-600 text-xl font-bold mt-2">
-                    ₹{item.product.price}
-                  </p>
+                    <p className="text-blue-600 text-xl font-bold mt-2">
+                      ₹{product.price}
+                    </p>
 
-                  <p className="text-gray-500 mt-3 line-clamp-2">
-                    {item.product.description}
-                  </p>
+                    <p className="text-gray-500 mt-3 line-clamp-2">
+                      {product.description}
+                    </p>
 
-                  <button
-                    onClick={() => removeItem(item._id)}
-                    className="mt-6 w-full bg-red-500 text-white py-3 rounded-lg hover:bg-red-600 transition flex justify-center items-center gap-2"
-                  >
-                    <FaHeartBroken />
-                    Remove from Wishlist
-                  </button>
-
+                    <button
+                      type="button"
+                      onClick={() => removeItem(item._id)}
+                      className="mt-6 w-full bg-red-500 text-white py-3 rounded-lg hover:bg-red-600 transition flex justify-center items-center gap-2"
+                    >
+                      <FaHeartBroken />
+                      Remove from Wishlist
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
-
+              );
+            })}
           </div>
         )}
-
       </div>
     </div>
   );
